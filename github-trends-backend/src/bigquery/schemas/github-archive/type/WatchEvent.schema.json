@@ -1,0 +1,6 @@
+{
+  "fields": [
+    { "name": "action", "type": "STRING", "description": "The action that was performed. Currently, can only be started." }
+  ],
+  "description": "Payload schema for WatchEvent."
+} 

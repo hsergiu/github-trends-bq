@@ -1,0 +1,9 @@
+{
+  "fields": [
+    { "name": "action", "type": "STRING", "description": "The action that was performed. Can be opened, edited, deleted, transferred, pinned, unpinned, closed, reopened, assigned, unassigned, labeled, unlabeled, locked, unlocked, milestoned, or demilestoned." },
+    { "name": "issue", "type": "RECORD", "fields": [], "description": "The issue itself." },
+    { "name": "changes", "type": "RECORD", "fields": [], "description": "The changes to the issue if the action was edited." },
+    { "name": "assignee", "type": "RECORD", "fields": [], "description": "The user assigned to the issue, if applicable." }
+  ],
+  "description": "Payload schema for IssuesEvent. See documentation for details on the issue, changes, and assignee objects."
+}

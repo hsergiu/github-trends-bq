@@ -1,0 +1,13 @@
+{
+  "fields": [
+    { "name": "action", "type": "STRING", "description": "The action that was performed on the comment. Can be created." },
+    { "name": "changes", "type": "RECORD", "fields": [
+      { "name": "body", "type": "RECORD", "fields": [
+        { "name": "from", "type": "STRING", "description": "The previous version of the body if the action was edited." }
+      ] }
+    ], "description": "The changes to the comment if the action was edited." },
+    { "name": "pull_request", "type": "RECORD", "fields": [], "description": "The pull request the comment belongs to." },
+    { "name": "comment", "type": "RECORD", "fields": [], "description": "The comment itself." }
+  ],
+  "description": "Payload schema for CommitCommentEvent. See documentation for details on pull_request and comment objects."
+} 

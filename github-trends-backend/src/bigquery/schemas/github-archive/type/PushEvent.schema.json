@@ -1,0 +1,30 @@
+{
+    "fields": [
+      { "name": "push_id", "type": "INTEGER", "description": "Unique identifier for the push." },
+      { "name": "size", "type": "INTEGER", "description": "The number of commits in the push." },
+      { "name": "distinct_size", "type": "INTEGER", "description": "The number of distinct commits in the push." },
+      { "name": "ref", "type": "STRING", "description": "The full git ref that was pushed." },
+      { "name": "head", "type": "STRING", "description": "The SHA of the most recent commit on ref after the push." },
+      { "name": "before", "type": "STRING", "description": "The SHA of the most recent commit on ref before the push." },
+      {
+        "name": "commits",
+        "type": "RECORD",
+        "mode": "REPEATED",
+        "fields": [
+          { "name": "sha", "type": "STRING", "description": "The SHA of the commit." },
+          { "name": "message", "type": "STRING", "description": "The commit message." },
+          {
+            "name": "author",
+            "type": "RECORD",
+            "fields": [
+              { "name": "name", "type": "STRING", "description": "The git author's name." },
+              { "name": "email", "type": "STRING", "description": "The git author's email address." }
+            ]
+          },
+          { "name": "url", "type": "STRING", "description": "URL that points to the commit API resource." },
+          { "name": "distinct", "type": "BOOLEAN", "description": "Whether this commit is distinct from any that have been pushed before." }
+        ]
+      }
+    ],
+    "description": "Payload schema for PushEvent."
+}

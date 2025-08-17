@@ -1,0 +1,15 @@
+{
+  "fields": [
+    { "name": "action", "type": "STRING", "description": "The action that was performed. This can be created." },
+    { "name": "effective_date", "type": "STRING", "description": "The date the cancellation or tier change will take effect." },
+    { "name": "changes", "type": "RECORD", "fields": [
+      { "name": "tier", "type": "RECORD", "fields": [
+        { "name": "from", "type": "STRING", "description": "The original tier before the change or pending change." }
+      ] },
+      { "name": "privacy_level", "type": "RECORD", "fields": [
+        { "name": "from", "type": "STRING", "description": "The details about the change when someone edits a sponsorship to change the privacy." }
+      ] }
+    ], "description": "The changes to the sponsorship if the action was edited." }
+  ],
+  "description": "Payload schema for SponsorshipEvent."
+} 

@@ -1,0 +1,47 @@
+{
+  "name": "github-trends-analyzer",
+  "version": "1.0.0",
+  "description": "Backend for analyzing GitHub trending repositories",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --exit-child src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test:integration": "node --experimental-vm-modules node_modules/.bin/jest --env-file=.env --testPathPattern=integration",
+    "test:unit": "node --experimental-vm-modules node_modules/.bin/jest --testPathPattern=unit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:reset": "prisma migrate reset",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset --force",
+    "db:setup": "prisma migrate dev --name init && prisma generate",
+    "test:db:setup": "NODE_ENV=test prisma migrate dev --name init && NODE_ENV=test prisma generate"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.0.0",
+    "@google-cloud/bigquery": "^8.0.0",
+    "@octokit/rest": "^19.0.0",
+    "@prisma/client": "^6.12.0",
+    "bull": "^4.10.4",
+    "cron": "^2.3.0",
+    "dotenv": "^16.5.0",
+    "fastify": "^4.15.0",
+    "node-fetch": "^3.3.1",
+    "openai": "^5.8.2",
+    "pg": "^8.16.3",
+    "pino-pretty": "^13.0.0",
+    "prisma": "^6.12.0",
+    "redis": "^5.0.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^18.15.11",
+    "@types/pg": "^8.15.4",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.4",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.3"
+  }
+}

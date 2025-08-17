@@ -1,0 +1,15 @@
+{
+  "fields": [
+    { "name": "action", "type": "STRING", "description": "The action that was performed. Can be published." },
+    { "name": "changes", "type": "RECORD", "fields": [
+      { "name": "body", "type": "RECORD", "fields": [
+        { "name": "from", "type": "STRING", "description": "The previous version of the body if the action was edited." }
+      ] },
+      { "name": "name", "type": "RECORD", "fields": [
+        { "name": "from", "type": "STRING", "description": "The previous version of the name if the action was edited." }
+      ] }
+    ], "description": "The changes to the release if the action was edited." },
+    { "name": "release", "type": "RECORD", "fields": [], "description": "The release object." }
+  ],
+  "description": "Payload schema for ReleaseEvent. See documentation for details on the release object."
+} 

@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Question {
+  id                          String   @id @default(uuid())
+  questionContent             String   @db.Text
+  title                      String   @db.VarChar()
+  bigQuerySql                String   @db.Text
+  sqlHash                    String
+  structuredQueryPlanSchema  Json?
+  type                       String   @default("user") @db.VarChar()
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+  
+  // Relationships
+  result                     QuestionResult?
+  jobMetadata                JobMetadata[]
+  
+  @@map("questions")
+}
+
+model JobMetadata {
+  id                         String   @id @default(uuid())
+  questionId                 String
+  bullJobId                  String   @unique  // Reference to Redis Bull job
+  status                     String   @default("pending")
+  failedReason              String?
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+  
+  // Relationships
+  question                   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  @@map("job_metadata")
+}
+
+model QuestionResult {
+  id                         String   @id @default(uuid())
+  questionId                 String   @unique
+  result                     Json
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+  
+  // Relationships
+  question                   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  @@map("question_results")
+}

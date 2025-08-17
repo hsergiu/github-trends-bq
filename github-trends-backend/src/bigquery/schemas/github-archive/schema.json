@@ -1,0 +1,54 @@
+{
+  "fields": [
+    {
+      "name": "id",
+      "type": "STRING",
+      "description": "Unique identifier for the event."
+    },
+    {
+      "name": "type",
+      "type": "STRING",
+      "description": "The type of event. Events uses PascalCase for the name."
+    },
+    {
+      "name": "actor",
+      "type": "RECORD",
+      "fields": [
+        { "name": "id", "type": "INTEGER", "description": "The unique identifier for the actor." },
+        { "name": "login", "type": "STRING", "description": "The username of the actor." }
+      ]
+    },
+    {
+      "name": "repo",
+      "type": "RECORD",
+      "fields": [
+        { "name": "id", "type": "INTEGER", "description": "The unique identifier of the repository." },
+        { "name": "name", "type": "STRING", "description": "The name of the repository, including owner and repo name." }
+      ]
+    },
+    {
+      "name": "payload",
+      "type": "STRING",
+      "description": "The event payload JSON object string is unique to the event type. See other types documentation for JSON schema details. Before accessing convert string to JSON."
+    },
+    {
+      "name": "public",
+      "type": "BOOLEAN",
+      "description": "Whether the event is visible to all users."
+    },
+    {
+      "name": "created_at",
+      "type": "TIMESTAMP",
+      "description": "The date and time when the event was triggered (ISO 8601)."
+    },
+    {
+      "name": "org",
+      "type": "RECORD",
+      "fields": [
+        { "name": "id", "type": "INTEGER", "description": "The unique identifier for the organization." },
+        { "name": "login", "type": "STRING", "description": "The name of the organization." }
+      ]
+    }
+  ],
+  "description": "The base schema for all GitHub events. The dataset is `githubarchive.day.yyyymmdd`. Replace 'yyyymmdd' with any numerical year, month and day. Always use `` when defining the dataset."
+}

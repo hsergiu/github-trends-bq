@@ -1,0 +1,11 @@
+{
+  "fields": [
+    {
+      "name": "forkee",
+      "type": "RECORD",
+      "fields": [],
+      "description": "The repository that was created as a result of the forking."
+    }
+  ],
+  "description": "Payload schema for ForkEvent. The forkee is the newly created repository."
+} 
