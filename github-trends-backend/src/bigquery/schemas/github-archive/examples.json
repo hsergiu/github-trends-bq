@@ -1,5 +1,5 @@
 {
-  "baseEventsQuery": "DECLARE start_month_and_day STRING DEFAULT 'mmdd'; -- replace with actual month (number 01, 02, ...) and day (number 01, 02, ...)\nDECLARE end_month_and_day   STRING DEFAULT 'mmdd'; -- replace with actual month (number 01, 02, ...) and day (number 01, 02, ...)\n\nWITH events AS (\n  SELECT\n    id,\n    type,\n    actor.login AS actor_login,\n    repo.name AS repo_name,\n    COALESCE(org.login, SPLIT(repo.name, '/')[OFFSET(0)]) AS org_login,\n    payload,\n    created_at\n  FROM `githubarchive.day.yyyy*` -- replace yyyy with year number\n  WHERE _TABLE_SUFFIX BETWEEN start_month_and_day AND end_month_and_day\n)\n-- Replace the SELECT below with any of the query bodies that follow\nSELECT 1;",
+  "baseEventsQuery": "WITH events AS (\n  SELECT\n    id,\n    type,\n    actor.login AS actor_login,\n    repo.name AS repo_name,\n    COALESCE(org.login, SPLIT(repo.name, '/')[OFFSET(0)]) AS org_login,\n    payload,\n    created_at\n  FROM `githubarchive.day.yyyy*` \n  WHERE _TABLE_SUFFIX BETWEEN 'mmdd' AND 'mmdd'\n)",
   "description": "This events CTE must be used with any of the queries that follow below.",
   "required": true,
   "queries": {

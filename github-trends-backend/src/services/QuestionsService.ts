@@ -1,4 +1,3 @@
-import { QuestionJobResult } from "./types";
 import { Question } from "@prisma/client";
 import { FastifyBaseLogger, FastifyReply } from "fastify";
 import { JobService } from "./JobService";
@@ -8,6 +7,7 @@ import BigQueryService from "../bigquery/BigQueryService";
 import PostgresService from "../postgres/PostgresService";
 import { LLMService } from "./LLMService";
 import { Job } from "bull";
+import { JobState } from "./SSEService";
 import { calculateSqlHash, calculatePromptHash } from "../controllers/utils";
 import crypto from "crypto";
 
@@ -35,19 +35,20 @@ export class QuestionsService {
     this.jobService = jobService || new JobService(logger);
     this.redisService = redisService || RedisService.getInstance(logger);
     this.sseService = sseService || SSEService.getInstance();
-    this.bigQueryService = bigQueryService || new BigQueryService();
+    this.bigQueryService = bigQueryService || BigQueryService.getInstance();
     this.postgresService = postgresService || PostgresService.getInstance(logger);
     this.llmService = llmService || new LLMService(logger);
     this.sseService.initializeService(logger);
   }
 
+  /** Register the question job processor and SSE event relays. */
   public initJobProcessor(): void {
     this.jobService.registerProcessor(
       QUESTION_JOB_TYPE,
       this.processQuestionJob.bind(this),
     );
 
-    this.jobService.on("job:completed", ({ queue, job, result }) => {
+    this.jobService.on("job:completed", ({ queue, job }) => {
       if (queue === QUESTION_JOB_TYPE) {
         this.onJobCompleted(job).catch(error => {
           this.logger.error(`Failed to handle job completion for ${job.id}`, error);
@@ -68,7 +69,12 @@ export class QuestionsService {
     });
   }
 
-  private async processQuestionJob(job: Job): Promise<QuestionJobResult> {
+  /**
+   * Orchestrate LLM planning, BigQuery execution, chart config, and caching.
+   * @param job Bull job payload containing user question and IDs.
+   * @returns Result rows and chart config.
+   */
+  private async processQuestionJob(job: Job): Promise<{ result: any, chartConfig: any }> {
     this.logger.info(`Processing question job ${job.id}`);
     const { questionId, userQuestion } = job.data.params;
 
@@ -113,21 +119,25 @@ export class QuestionsService {
       });
 
       this.logger.info(`Completed question job ${job.id} for question ${questionId}`);
-      // metadata needed by buildJobState
+      // Metadata needed by buildJobState
       job.data.params.title = title;
       job.data.params.sqlHash = sqlHash;
 
       return { result: queryResult, chartConfig };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed question job ${job.id} for question ${questionId}`, {
-        error: errorMessage,
+        error: error instanceof Error ? error.message : 'Unknown error',
         questionId,
       });
       throw error;
     }
   }
 
+  /**
+   * Deduplicate by prompt hash, create question if missing, then enqueue processing.
+   * @param params User question and optional questionId.
+   * @returns The enqueued job and resolved questionId.
+   */
   public async scheduleQuestionJob(params: { userQuestion: string; questionId?: string }): Promise<{ job: any; questionId: string }> {
     const promptHash = calculatePromptHash(params.userQuestion);
 
@@ -176,14 +186,14 @@ export class QuestionsService {
 
 
   public async getSuggestedQuestions(): Promise<Question[]> {
-    return this.postgresService.getUserQuestions();
+    return this.postgresService.getSuggestedQuestions();
   }
 
   public async getUserQuestions(): Promise<Question[]> {
     return this.postgresService.getUserQuestions();
   }
 
-  public async getQuestionById(questionId: string): Promise<any | null> {
+  public async getQuestionById(questionId: string): Promise<Question | null> {
     return this.postgresService.getQuestionById(questionId);
   }
 
@@ -199,14 +209,17 @@ export class QuestionsService {
     await this.redisService.cachePromptHash(promptHash, data, expiryInSeconds);
   }
 
-  private async getSqlHashWithResult(sqlHash: string): Promise<any | null> {
+  private async getSqlHashWithResult(sqlHash: string): Promise<Record<string, unknown> | null> {
     return this.redisService.getSqlHashWithResult(sqlHash);
   }
 
-  private async cacheSqlHashWithResult(sqlHash: string, data: any, expiryInSeconds?: number): Promise<void> {
+  private async cacheSqlHashWithResult(sqlHash: string, data: Record<string, unknown>, expiryInSeconds?: number): Promise<void> {
     await this.redisService.cacheSqlHashWithResult(sqlHash, data, expiryInSeconds);
   }
 
+  /**
+   * Set up SSE for a question, priming with current job state or 404 if missing.
+   */
   public async subscribeToQuestionUpdates(questionId: string, reply: FastifyReply): Promise<void> {
     const job = await this.jobService.findExistingJob(QUESTION_JOB_TYPE, questionId);
     if (!job) {
@@ -217,14 +230,15 @@ export class QuestionsService {
     this.sseService.setupConnection(job.data.customId, reply, jobState);
   }
 
-  private buildJobState(job: Job): any {
+  /** Build the current JobState from a Bull job object. */
+  private buildJobState(job: Job): JobState {
     const status = this.jobService.getJobStatus(job);
     const baseState = {
       jobId: job.data.customId,
       status,
-      error: job.failedReason ? 'Question processing failed. Please try again.' : null,
+      error: job.failedReason || undefined,
       createdAt: job.data.createdAt,
-    };
+    } as JobState;
 
     if (status === 'completed' && job.returnvalue?.result?.rows) {
       return {
@@ -244,6 +258,7 @@ export class QuestionsService {
     return { ...baseState, title: job.data.params?.title };
   }
 
+  /** Persist completion metadata and result; skip if deduplicated. */
   private async onJobCompleted(job: Job): Promise<void> {
     try {
       if (job.data.deduplicated) {
@@ -257,6 +272,7 @@ export class QuestionsService {
     }
   }
 
+  /** Persist failure status and reason for a job. */
   private async onJobFailed(job: Job): Promise<void> {
     try {
       await this.postgresService.updateJobMetadata(job.id.toString(), {

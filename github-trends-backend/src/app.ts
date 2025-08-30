@@ -2,6 +2,7 @@ import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import { apiRoutes } from "./api/routes";
 import RedisService from "./redis/RedisService";
+import { safeErrorHandler } from "./middleware/SafeErrorHandler";
 
 export const createApp = async (): Promise<FastifyInstance> => {
   const app: FastifyInstance = Fastify({
@@ -18,6 +19,8 @@ export const createApp = async (): Promise<FastifyInstance> => {
 
   const redisService = RedisService.getInstance(app.log);
   await redisService.initializeService();
+
+  app.register(safeErrorHandler);
 
   app.register(cors, {
     origin: true,

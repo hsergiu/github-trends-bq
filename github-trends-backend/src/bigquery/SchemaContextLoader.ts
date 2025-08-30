@@ -18,9 +18,12 @@ export class SchemaContextLoader {
 
   loadBaseSchema(): any {
     return JSON.parse(fs.readFileSync(this.baseSchemaPath, 'utf-8'));
-    
   }
 
+  /**
+   * Load all type schemas from the type schemas directory.
+   * @returns A record of all type schemas.
+   */
   getAllTypeSchemas(): Record<string, any> {
     if (!fs.existsSync(this.typeSchemasDir)) return {};
     const files = fs.readdirSync(this.typeSchemasDir);
@@ -35,6 +38,10 @@ export class SchemaContextLoader {
     return schemas;
   }
 
+  /**
+   * Get the context for all type schemas.
+   * @returns The context for all type schemas.
+   */
   getAllTypeSchemasContext(): string {
     const allSchemas = this.getAllTypeSchemas();
     if (Object.keys(allSchemas).length === 0) return '';
@@ -46,16 +53,9 @@ export class SchemaContextLoader {
     return context;
   }
 
-  getQueryExamples(): string {
-    if (!fs.existsSync(this.queryExamplesPath)) return '';
-    return fs.readFileSync(this.queryExamplesPath, 'utf-8');
-  }
-
-  getExtraContext(): string {
-    if (!fs.existsSync(this.extraContextPath)) return '';
-    return fs.readFileSync(this.extraContextPath, 'utf-8');
-  }
-
+  /**
+   * Get the full schema context based on the base schema, type schemas.
+   */
   getFullSchemaContext(): string {
     const parts: string[] = [];
 
@@ -66,12 +66,6 @@ export class SchemaContextLoader {
 
     const typeSchemasContext = this.getAllTypeSchemasContext();
     if (typeSchemasContext) parts.push(typeSchemasContext);
-
-    const examples = this.getQueryExamples();
-    if (examples) parts.push('Query examples:\n' + examples);
-
-    const extra = this.getExtraContext();
-    if (extra) parts.push('Additional context:\n' + extra);
 
     return parts.join('\n\n');
   }

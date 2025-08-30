@@ -38,10 +38,6 @@ export class RedisGateway {
     }
   }
 
-  pipeline() {
-    return this.client.multi();
-  }
-
   getClient(): RedisClientType {
     return this.client;
   }
@@ -81,10 +77,6 @@ export class RedisGateway {
 
   async mget(keys: string[]): Promise<(string | null)[]> {
     return await this.client.mGet(keys);
-  }
-
-  async executePipeline(pipeline: any): Promise<any[]> {
-    return await pipeline.exec();
   }
 
   async batchSetWithTTL(

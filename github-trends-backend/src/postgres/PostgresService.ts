@@ -28,6 +28,23 @@ export interface CreateQuestionResultParams {
   result: any;
 }
 
+export interface UpsertExampleDbParams {
+  id: string;
+  title: string;
+  promptText: string;
+  sqlSnippet: string;
+  chartHint?: string | null;
+  tags?: string[];
+  embedding: number[];
+  embeddingModel: string;
+}
+
+export interface SearchExamplesOpts {
+  limit?: number;
+  minSim?: number;
+  tags?: string[];
+}
+
 export class PostgresService {
   private static instance: PostgresService | null = null;
   private prisma: PrismaClient;
@@ -177,6 +194,68 @@ export class PostgresService {
 
   getPrismaClient(): PrismaClient {
     return this.prisma;
+  }
+
+  async upsertExample(example: UpsertExampleDbParams): Promise<void> {
+    const embeddingLiteral = `[${example.embedding.join(',')}]`;
+    await this.prisma.$executeRawUnsafe(
+      `INSERT INTO query_examples (id, title, prompt_text, sql_snippet, chart_hint, tags, embedding, embedding_model)
+       VALUES ($1::uuid, $2, $3, $4, $5, $6::text[], $7::vector, $8)
+       ON CONFLICT (id) DO UPDATE SET
+         title = EXCLUDED.title,
+         prompt_text = EXCLUDED.prompt_text,
+         sql_snippet = EXCLUDED.sql_snippet,
+         chart_hint = EXCLUDED.chart_hint,
+         tags = EXCLUDED.tags,
+         embedding = EXCLUDED.embedding,
+         embedding_model = EXCLUDED.embedding_model,
+         updated_at = now();`,
+      example.id,
+      example.title,
+      example.promptText,
+      example.sqlSnippet,
+      example.chartHint ?? null,
+      (example.tags || []) as any,
+      embeddingLiteral,
+      example.embeddingModel,
+    );
+  }
+
+  async searchExamplesByVector(embedding: number[], opts: SearchExamplesOpts = {}): Promise<Array<{ id: string; title: string; prompt_text: string; sql_snippet: string; chart_hint: string | null; tags: string[]; similarity: number }>> {
+    const limit = opts.limit ?? 3;
+    const minSim = opts.minSim ?? 0.8;
+    const hasTags = Array.isArray(opts.tags) && opts.tags.length > 0;
+    const embeddingLiteral = `[${embedding.join(',')}]`;
+
+    if (hasTags) {
+      const rows = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT id, title, prompt_text, sql_snippet, chart_hint, tags,
+                1 - (embedding <=> $1::vector) AS similarity
+         FROM query_examples
+         WHERE (tags && $2::text[])
+           AND 1 - (embedding <=> $1::vector) >= $3
+         ORDER BY embedding <=> $1::vector
+         LIMIT $4`,
+        embeddingLiteral,
+        opts.tags as any,
+        minSim,
+        limit
+      );
+      return rows as any;
+    } else {
+      const rows = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT id, title, prompt_text, sql_snippet, chart_hint, tags,
+                1 - (embedding <=> $1::vector) AS similarity
+         FROM query_examples
+         WHERE 1 - (embedding <=> $1::vector) >= $2
+         ORDER BY embedding <=> $1::vector
+         LIMIT $3`,
+        embeddingLiteral,
+        minSim,
+        limit
+      );
+      return rows as any;
+    }
   }
 }
 

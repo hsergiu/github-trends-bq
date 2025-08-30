@@ -3,17 +3,20 @@ const QUERY_LIMIT_CONSTANTS = {
   MAX_LIMIT: 50,
 } as const;
 
+/** Comparison filter for a single column. */
 export interface Filter {
   column: string;
   op: string;
   value: any;
 }
 
+/** Logical group of filters combined by AND/OR. */
 export interface FilterGroup {
   logic: 'AND' | 'OR';
   filters: Array<Filter | FilterGroup>;
 }
 
+/** Definition of a SELECT query. */
 export interface QueryPlan {
   table: string;
   columns: string[];
@@ -23,11 +26,13 @@ export interface QueryPlan {
   orderBy?: Array<{ column: string; direction?: 'ASC' | 'DESC' }>;
 }
 
+/** Common Table Expression (CTE) with a name and query. */
 export interface CTEPlan {
   name: string;
   query: QueryPlan;
 }
 
+/** Root plan containing optional CTEs and the main query. */
 export interface RootQueryPlan {
   ctes?: CTEPlan[];
   main_query: QueryPlan;
@@ -37,6 +42,11 @@ export abstract class BaseBigQueryPlanBuilder {
   protected abstract get allowedOperators(): string[];
   abstract get bigQueryPlanSchema(): any;
 
+  /**
+   * Build a BigQuery query from a root query plan.
+   * @param root The root query plan.
+   * @returns The BigQuery query.
+   */
   buildQuery(root: RootQueryPlan): string {
     const cteNames = (root.ctes || []).map(cte => cte.name);
     const ctes = root.ctes?.length
@@ -46,6 +56,13 @@ export abstract class BaseBigQueryPlanBuilder {
     return ctes ? `${ctes}\n${main}` : main;
   }
 
+  /**
+   * Build a single BigQuery query from a query plan.
+   * @param plan The query plan.
+   * @param _cteNames The CTE names.
+   * @param hasOptionalLimit Whether to include an optional limit.
+   * @returns The BigQuery query.
+   */
   buildSingleQuery(plan: QueryPlan, _cteNames: string[] = [], hasOptionalLimit = false): string {
     if (!plan.columns.length || plan.columns.includes("*")) throw new Error("Invalid columns");
 
@@ -63,6 +80,7 @@ export abstract class BaseBigQueryPlanBuilder {
     return `SELECT ${select} FROM ${plan.table} WHERE ${where}${groupBy}${orderBy} LIMIT ${limit}`;
   }
 
+  /** Build a SQL WHERE clause from filters. */
   private buildFilterClause(filters: Array<Filter | FilterGroup>): string {
     const buildClause = (item: Filter | FilterGroup): string => {
       if ('logic' in item) return `(${item.filters.map(buildClause).join(` ${item.logic} `)})`;
@@ -78,14 +96,17 @@ export abstract class BaseBigQueryPlanBuilder {
     return filters.map(buildClause).join(" AND ");
   }
 
+  /** Check whether a value is a variable reference of the form { var }. */
   private isVariableReference(value: any): value is { var: string } {
     return value && typeof value === 'object' && typeof value.var === 'string';
   }
 
+  /** Format a value for use in expressions, honoring variable refs. */
   private formatExpressionValue(value: any): string {
     return this.isVariableReference(value) ? value.var : this.formatValue(value);
   }
 
+  /** Serialize a value or array for SQL literals. */
   private formatValue(value: any): string {
     if (this.isVariableReference(value)) return value.var;
     if (typeof value === "string") return `'${value.replace(/'/g, "''")}'`;

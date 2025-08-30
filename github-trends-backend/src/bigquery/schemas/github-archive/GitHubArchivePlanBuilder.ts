@@ -1,7 +1,12 @@
 import { BaseBigQueryPlanBuilder } from '../BaseBigQueryPlanBuilder';
-import examples from './examples.json';
 
 export class GitHubArchivePlanBuilder extends BaseBigQueryPlanBuilder {
+  private injectedExamplesContext?: string;
+
+  public setExamplesContext(examplesBlock: string | undefined): void {
+    this.injectedExamplesContext = examplesBlock;
+  }
+
   protected get allowedOperators(): string[] {
     return ["=", "!=", ">", "<", ">=", "<=", "IN", "BETWEEN"];
   }
@@ -29,20 +34,32 @@ export class GitHubArchivePlanBuilder extends BaseBigQueryPlanBuilder {
     return `
       If the user did not specify a date interval or a date for event aggregation use last day ${now} as a reference.
       Define the interval \`githubarchive.day.yyyy*\` WHERE _TABLE_SUFFIX BETWEEN 'mmdd' AND 'mmdd'. Where yyyy, mm and dd are taken from the reference.
-      Always use \`\` when defining the table name.
+      Always use backticks (\`) around table identifiers when defining the table name.
     `;
   }
 
-  private get examplesContext(): string {
-    return 'Examples:\n' + JSON.stringify(examples);
+  private get qualityGatePrompt(): string {
+    return `
+    Quality gate and abstention rules:
+    - Provide a self-assessed fidelity score in [0.0, 1.0] for how well the plan answers the user's question and will execute correctly.
+    - If the user's intent is ambiguous, critical information is missing (e.g., repo scope, time window, metric), or the plan is likely to fail, set \"abstain\" to true.
+    - Common issues that should reduce fidelity or trigger abstention:
+      * Missing date filter when querying wildcard tables (e.g., githubarchive.day.yyyy*).
+      * Selecting too many columns or using \"*\".
+      * Unsupported operators or malformed filters.
+      * Mismatch between requested metric and selected columns/aggregations.
+      * Unclear grouping key for event aggregations.
+    `;
   }
 
   private get additionalContextSections(): string[] {
-    return [
+    const sections = [
       this.chartContext,
       this.incompleteDataHelperPrompt,
-      this.examplesContext,
+      this.qualityGatePrompt,
     ];
+    if (this.injectedExamplesContext) sections.push(this.injectedExamplesContext);
+    return sections;
   }
 
   get additionalContext(): string {
@@ -56,6 +73,8 @@ export class GitHubArchivePlanBuilder extends BaseBigQueryPlanBuilder {
       schema: {
         type: "object",
         properties: {
+          fidelity: { type: "number", minimum: 0, maximum: 1, description: "Self-assessed confidence that the plan matches the user's intent and will work." },
+          abstain: { type: "boolean", description: "Set true if the model is not confident enough to proceed." },
           ctes: {
             type: "array",
             description: "Common Table Expressions (optional)",
@@ -71,7 +90,7 @@ export class GitHubArchivePlanBuilder extends BaseBigQueryPlanBuilder {
           },
           main_query: { "$ref": "#/$defs/query_plan" },
         },
-        required: ["ctes", "main_query"],
+        required: ["fidelity", "abstain", "ctes", "main_query"],
         additionalProperties: false,
         "$defs": {
           "variable_ref": {

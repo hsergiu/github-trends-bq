@@ -5,6 +5,7 @@ import { safeJsonParse } from "../utils/utils";
 const TTL = {
   DEFAULT: 60 * 60 * 24, // 24 hours
   LONG: 60 * 60 * 24 * 30, // 30 days
+  SHORT: 60 * 10, // 10 minutes
 };
 
 const CACHE_PREFIXES = {
@@ -13,6 +14,7 @@ const CACHE_PREFIXES = {
   PROMPT_HASH: 'question:prompt',
   SQL_HASH: 'question:sql',
   BIGQUERY_RESULT: 'bigquery:result',
+  EMBEDDING: 'embedding:prompt',
 };
 
 class RedisService {
@@ -60,6 +62,15 @@ class RedisService {
 
   async getSqlHashWithResult(sqlHash: string): Promise<any | null> {
     return this.get(CACHE_PREFIXES.SQL_HASH, sqlHash, 'getSqlHashWithResult');
+  }
+
+  async cacheEmbedding(prompt: string, vector: number[], expiryInSeconds: number = TTL.SHORT): Promise<void> {
+    await this.cache(CACHE_PREFIXES.EMBEDDING, prompt, { v: vector }, expiryInSeconds);
+  }
+
+  async getEmbedding(prompt: string): Promise<number[] | null> {
+    const data = await this.get(CACHE_PREFIXES.EMBEDDING, prompt, 'getEmbedding');
+    return Array.isArray(data?.v) ? (data.v as number[]) : null;
   }
 
   private async cache(prefix: string, identifier: string, data: any, expiryInSeconds: number): Promise<void> {

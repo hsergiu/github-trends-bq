@@ -3,12 +3,13 @@ import { FastifyReply, FastifyBaseLogger } from "fastify";
 /** Timeout for connection close after job completion/failure - 1 second */
 const CONNECTION_CLOSE_TIMEOUT = 1000;
 
-interface JobState {
+export interface JobState {
   jobId: string;
   status: string;
-  result?: any;
+  title?: string;
+  result?: unknown;
   error?: string;
-  createdAt?: any;
+  createdAt?: string;
 }
 
 export class SSEService {
@@ -27,6 +28,12 @@ export class SSEService {
     this.logger = logger;
   }
 
+  /**
+   * Set up an SSE connection for a job.
+   * @param customJobId The job ID.
+   * @param reply The Fastify reply to send the event.
+   * @param jobState The initial job state.
+   */
   public setupConnection(
     customJobId: string,
     reply: FastifyReply,
@@ -47,6 +54,10 @@ export class SSEService {
     }
   }
 
+  /**
+   * Set up the SSE headers for a reply.
+   * @param reply The Fastify reply to set up.
+   */
   private setupSSEHeaders(reply: FastifyReply): void {
     reply.raw.writeHead(200, {
       "Content-Type": "text/event-stream",
@@ -58,6 +69,12 @@ export class SSEService {
     });
   }
 
+  /**
+   * Write an event to the SSE connection and close it if the job is complete.
+   * @param customJobId The job ID.
+   * @param reply The Fastify reply to send the event.
+   * @param jobState The job state.
+   */
   private writeEventAndMaybeClose(customJobId: string, reply: FastifyReply, jobState: JobState): void {
     const event = `data: ${JSON.stringify(jobState)}\n\n`;
     reply.raw.write(event);
@@ -69,6 +86,11 @@ export class SSEService {
     }
   }
 
+  /**
+   * Send an update to the SSE connection.
+   * @param customJobId The job ID.
+   * @param jobState The job state.
+   */
   public sendUpdate(customJobId: string, jobState: JobState): void {
     const connection = this.activeConnections.get(customJobId);
     if (!connection) return;

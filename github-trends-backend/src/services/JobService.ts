@@ -1,6 +1,7 @@
 import { FastifyBaseLogger } from "fastify";
 import Queue, { Job, JobOptions, JobStatus } from "bull";
 import { EventEmitter } from "events";
+import { toSafeFailedReason } from "./ErrorUtils";
 
 export class JobService extends EventEmitter {
   private logger: FastifyBaseLogger;
@@ -11,6 +12,10 @@ export class JobService extends EventEmitter {
     this.logger = logger;
   }
 
+  /** Initialize or reuse a Bull queue for a job type.
+   * @param jobType Queue name.
+   * @returns Queue instance.
+   */
   public initQueue(jobType: string): Queue.Queue {
     if (this.queues.has(jobType)) {
       return this.queues.get(jobType)!;
@@ -36,7 +41,9 @@ export class JobService extends EventEmitter {
     });
 
     queue.on("failed", (job, error) => {
-      this.logger.error(`Job ${job.id} in queue ${jobType} failed: ${error}`);
+      const safeFailedReason = toSafeFailedReason(error);
+      this.logger.error(`Job ${job.id} in queue ${jobType} failed: ${error.message}\n${error.stack}`);
+      job.failedReason = safeFailedReason;
       this.emit("job:failed", { queue: jobType, job });
     });
 
@@ -49,6 +56,11 @@ export class JobService extends EventEmitter {
     return queue;
   }
 
+  /** Register an async processor for a job type.
+   * @param jobType Queue name.
+   * @param processor Async function to process jobs.
+   * @param concurrency Number of parallel processors.
+   */
   public registerProcessor(
     jobType: string,
     processor: (job: Job) => Promise<any>,
@@ -69,6 +81,8 @@ export class JobService extends EventEmitter {
     return `${jobType}:${jobKey}`;
   }
 
+  /** Search all states for a job with a matching customId.
+   */
   public async findExistingJob(
     jobType: string,
     jobKey: string,
@@ -93,6 +107,7 @@ export class JobService extends EventEmitter {
     return null;
   }
 
+  /** Enqueue a job with a deterministic customId; optionally skip existing check. */
   public async createJob(
     jobType: string,
     jobKey: string,
@@ -125,6 +140,7 @@ export class JobService extends EventEmitter {
     return job;
   }
 
+  /** Map Bull job timestamps to a coarse status string. */
   public getJobStatus(
     job: Job,
   ): "pending" | "processing" | "completed" | "failed" {
@@ -137,6 +153,9 @@ export class JobService extends EventEmitter {
     }
   }
 
+  /** Clean completed/failed jobs across all queues (test helper).
+   * @returns Total number of removed jobs.
+   */
   public async testCleanup(): Promise<number> {
     let totalRemoved = 0;
 
