@@ -4,7 +4,7 @@
   "description": "Backend for analyzing GitHub trending repositories",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --exit-child src/server.ts",
+    "dev": "ts-node-dev --exit-child src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "test:integration": "node --experimental-vm-modules node_modules/.bin/jest --env-file=.env --testPathPattern=integration",
@@ -12,6 +12,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:reset": "prisma migrate reset",
+    "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force",

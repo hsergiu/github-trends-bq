@@ -7,6 +7,7 @@ export interface JobState {
   jobId: string;
   status: string;
   title?: string;
+  questionContent?: string;
   result?: unknown;
   error?: string;
   createdAt?: string;

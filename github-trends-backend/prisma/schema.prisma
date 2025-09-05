@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -20,6 +21,7 @@ model Question {
   
   result                     QuestionResult?
   jobMetadata                JobMetadata[]
+  questionRequests           QuestionRequest[]
   
   @@map("questions")
 }
@@ -64,4 +66,16 @@ model QueryExample {
   updated_at      DateTime @default(now())
 
   @@map("query_examples")
+}
+
+model QuestionRequest {
+  id          String   @id @default(uuid())
+  questionId  String
+  source      String?  @db.VarChar()
+  createdAt   DateTime @default(now())
+
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId, createdAt])
+  @@map("question_requests")
 }

@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import { apiRoutes } from "./api/routes";
 import RedisService from "./redis/RedisService";
 import { safeErrorHandler } from "./middleware/SafeErrorHandler";
+import QuestionSetSuggestedJob from "./jobs/QuestionSetSuggestedJob";
 
 export const createApp = async (): Promise<FastifyInstance> => {
   const app: FastifyInstance = Fastify({
@@ -25,6 +26,9 @@ export const createApp = async (): Promise<FastifyInstance> => {
   app.register(cors, {
     origin: true,
   });
+
+  const popularityJob = new QuestionSetSuggestedJob(app.log);
+  popularityJob.start();
 
   app.register(apiRoutes, { prefix: "/api" });
 

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { QuestionsService } from '@/services/QuestionsService';
 import { QueryResult } from '@/utils/types';
 
-export const useQuestionUpdates = (onQuestionCompleted?: (questionId: string, title: string) => void) => {
+export const useQuestionUpdates = (onQuestionCompleted?: (questionId: string, title: string, questionContent: string) => void) => {
   const [result, setResult] = useState<QueryResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,8 +61,8 @@ export const useQuestionUpdates = (onQuestionCompleted?: (questionId: string, ti
         if (data.status === 'completed' && data.result) {
           setIsLoading(false);
           setResult({ data: data.result });
-          if (data.title && onQuestionCompleted) {
-            onQuestionCompleted(questionId, data.title);
+          if (data.title && data.questionContent && onQuestionCompleted) {
+            onQuestionCompleted(questionId, data.title, data.questionContent);
           }
           cleanupSSE();
         } else if (data.status === 'failed') {
@@ -96,7 +96,6 @@ export const useQuestionUpdates = (onQuestionCompleted?: (questionId: string, ti
     isLoading,
     error,
     fetchQuestionData,
-    subscribeToUpdates,
     clearResult,
   };
 };

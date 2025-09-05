@@ -39,11 +39,12 @@ export const useQuestions = (userQuestions: any[] | undefined) => {
     }
   };
 
-  const updateQuestionTitle = (questionId: string, newTitle: string) => {
+  const updateQuestionTitle = (questionId: string, newTitle: string, questionContent: string) => {
     // Add new question to sidebar when job finishes with title
     const newQuestion = {
       id: questionId,
-      title: truncateTitle(newTitle)
+      title: truncateTitle(newTitle),
+      questionContent,
     };
     
     setLocalUserQuestions(prev => [newQuestion, ...prev]);

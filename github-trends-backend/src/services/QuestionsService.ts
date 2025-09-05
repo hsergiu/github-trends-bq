@@ -184,6 +184,13 @@ export class QuestionsService {
     return { job, questionId };
   }
 
+  public async logQuestionRequest(questionId: string, opts?: { userId?: string; source?: string }): Promise<void> {
+    await this.postgresService.createQuestionRequest({
+      questionId,
+      source: opts?.source,
+    });
+  }
+
 
   public async getSuggestedQuestions(): Promise<Question[]> {
     return this.postgresService.getSuggestedQuestions();
@@ -244,6 +251,7 @@ export class QuestionsService {
       return {
         ...baseState,
         title: job.data.params?.title,
+        questionContent: job.data.params?.userQuestion,
         result: {
           data: job.returnvalue.result?.rows,
           metadata: {

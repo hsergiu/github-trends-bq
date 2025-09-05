@@ -53,11 +53,11 @@ const DashboardPage: React.FC = () => {
 
   const { allUserQuestions, handleNewQuestion, createQuestion, updateQuestionTitle } = useQuestions(userQuestions);
   
-  const handleQuestionCompleted = (questionId: string, title: string) => {
-    updateQuestionTitle(questionId, title);
+  const handleQuestionCompleted = (questionId: string, title: string, questionContent: string) => {
+    updateQuestionTitle(questionId, title, questionContent);
   };
   
-  const { result, isLoading, error: queryError, fetchQuestionData, subscribeToUpdates, clearResult } = useQuestionUpdates(handleQuestionCompleted);
+  const { result, isLoading, error: queryError, fetchQuestionData, clearResult } = useQuestionUpdates(handleQuestionCompleted);
   
   useEffect(() => {
     if (queryError) {
@@ -94,7 +94,7 @@ const DashboardPage: React.FC = () => {
         setErrorMessage(null);
         const newQuery = await createQuestion(trimmedQuestionText);
         setActiveQuery(newQuery);
-        subscribeToUpdates(newQuery.id);
+        fetchQuestionData(newQuery.id);
       } catch (error) {
         setErrorMessage("Failed to create question. Please try again.");
       }
@@ -116,6 +116,7 @@ const DashboardPage: React.FC = () => {
   };
 
   const isNewQuestionDisabled = activeQuery?.id === NEW_QUESTION_ID && !errorMessage;
+  const isInputDisabled = activeQuery?.id !== NEW_QUESTION_ID;
   
   if (error) {
     return (
@@ -223,7 +224,8 @@ const DashboardPage: React.FC = () => {
           value={questionText ?? ""}
           onChange={(e) => setQuestionText(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-1/2 p-3 mb-8 rounded-lg border border-gray-700 bg-gray-800 text-gray-200 shadow-sm placeholder-gray-500 focus:outline-none focus:ring-2 transition"
+          disabled={isInputDisabled}
+          className="w-1/2 p-3 mb-8 rounded-lg border border-gray-700 bg-gray-800 text-gray-200 shadow-sm placeholder-gray-500 focus:outline-none focus:ring-2 transition disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed"
         />
         {errorMessage && (
           <div className="text-red-400 text-center mb-4">

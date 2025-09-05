@@ -22,6 +22,8 @@ export class QuestionsCreateController {
         userQuestion: userPrompt
       });
 
+      await this.questionsService.logQuestionRequest(questionId, { source: 'createQuestion' });
+
       return reply.status(202).send({
         questionId,
         jobId: job.id

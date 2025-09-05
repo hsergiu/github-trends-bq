@@ -25,8 +25,8 @@ export class QuestionsGetController {
         });
       }
 
-      const latestJob = questionData.jobMetadata[0];
-      const questionResult = questionData.result;
+      const latestJob = (questionData as any).jobMetadata?.[0];
+      const questionResult = (questionData as any).result;
 
       let status: "done" | "in_progress" = "done";
       let result = null;
@@ -43,6 +43,7 @@ export class QuestionsGetController {
       return {
         id: questionData.id,
         title: questionData.title,
+        questionContent: questionData.questionContent,
         status,
         result
       };

@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: gt_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: github_trends_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: gt_redis
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: ./github-trends-backend
+      dockerfile: Dockerfile
+    container_name: gt_backend
+    env_file:
+      - ./github-trends-backend/.env
+    volumes:
+      - ./github-trends-backend:/app
+      - backend_node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    command: sh -lc "npm run db:deploy && npm run dev"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./github-trends-frontend
+      dockerfile: Dockerfile
+    container_name: gt_frontend
+    volumes:
+      - ./github-trends-frontend:/app
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  backend_node_modules:
+  frontend_node_modules:

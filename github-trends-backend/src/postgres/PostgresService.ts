@@ -28,6 +28,11 @@ export interface CreateQuestionResultParams {
   result: any;
 }
 
+export interface CreateQuestionRequestParams {
+  questionId: string;
+  source?: string;
+}
+
 export interface UpsertExampleDbParams {
   id: string;
   title: string;
@@ -128,11 +133,64 @@ export class PostgresService {
     });
   }
 
+  async createQuestionRequest(request: CreateQuestionRequestParams): Promise<void> {
+    await this.prisma.questionRequest.create({
+      data: {
+        questionId: request.questionId,
+        source: request.source,
+      }
+    });
+  }
+
   async updateJobMetadata(bullJobId: string, updates: Partial<JobMetadata>): Promise<JobMetadata> {
     return this.prisma.jobMetadata.update({
       where: { bullJobId },
       data: updates,
     });
+  }
+
+  /**
+   * Promote popular questions to suggested
+   * @param params.threshold - The threshold for the promotion
+   * @param params.windowHours - The window hours for the promotion
+   * @returns The number of questions promoted
+   */
+  async promotePopularQuestions(params: { threshold: number; windowHours: number }): Promise<number> {
+    const { threshold, windowHours } = params;
+    const windowStart = new Date(Date.now() - windowHours * 60 * 60 * 1000);
+
+    const popular = await this.prisma.questionRequest.groupBy({
+      by: ['questionId'],
+      where: {
+        createdAt: { gte: windowStart },
+        question: { type: 'user' },
+      },
+      _count: { questionId: true },
+      having: {
+        questionId: {
+          _count: {
+            gte: threshold,
+          },
+        },
+      },
+    } as any);
+
+    if (!popular || popular.length === 0) return 0;
+
+    const questionIds = popular.map((p: any) => p.questionId);
+
+    const result = await this.prisma.question.updateMany({
+      where: {
+        id: { in: questionIds },
+        type: 'user',
+      },
+      data: {
+        type: 'suggested',
+        updatedAt: new Date(),
+      },
+    });
+
+    return result.count || 0;
   }
 
   async completeJobWithResult(bullJobId: string, returnValue: any): Promise<{ jobMetadata: JobMetadata; result: QuestionResult }> {
@@ -187,6 +245,7 @@ export class PostgresService {
   }
 
   async testCleanup(): Promise<void> {
+    await this.prisma.questionRequest.deleteMany();
     await this.prisma.questionResult.deleteMany();
     await this.prisma.jobMetadata.deleteMany();
     await this.prisma.question.deleteMany();
