@@ -64,7 +64,7 @@ export class ExamplesService {
 	 * @param opts Optional search parameters.
 	 * @returns Array of matching examples.
 	 */
-	async search(userPrompt: string, opts: SearchOptions = { limit: 3, minSim: 0.8, tags: ["githubarchive"] }): Promise<ExampleSearchResult[]> {
+	async search(userPrompt: string, opts: SearchOptions = { limit: 1, minSim: 0.8, tags: ["githubarchive"] }): Promise<ExampleSearchResult[]> {
 		const vector = await this.embed.embed(userPrompt);
 		const rows = await this.postgres.searchExamplesByVector(vector, opts);
 		return rows.map((r) => ({

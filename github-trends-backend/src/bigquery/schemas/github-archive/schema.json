@@ -29,7 +29,7 @@
     {
       "name": "payload",
       "type": "STRING",
-      "description": "The event payload JSON object string is unique to the event type. See other types documentation for JSON schema details. Before accessing convert string to JSON."
+      "description": "CAST THIS STRING FIELD TO JSON WHEN ACCESSING IT. The event payload JSON object string is unique to the event type. See other types documentation for JSON schema details. Before accessing convert string to JSON."
     },
     {
       "name": "public",

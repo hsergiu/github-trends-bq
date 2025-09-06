@@ -2,6 +2,7 @@
   "baseEventsQuery": "WITH events AS (\n  SELECT\n    id,\n    type,\n    actor.login AS actor_login,\n    repo.name AS repo_name,\n    COALESCE(org.login, SPLIT(repo.name, '/')[OFFSET(0)]) AS org_login,\n    payload,\n    created_at\n  FROM `githubarchive.day.yyyy*` \n  WHERE _TABLE_SUFFIX BETWEEN 'mmdd' AND 'mmdd'\n)",
   "description": "This events CTE must be used with any of the queries that follow below.",
   "required": true,
+  "_note": "recheck queries for referenced unknown aliases",
   "queries": {
     "crossCutting": [
       { "id": "eventVolumeByDay", "description": "Event volume by day", "sql": "SELECT DATE(created_at) AS day, COUNT(*) AS events_count\nFROM events\nGROUP BY day\nORDER BY day;" },

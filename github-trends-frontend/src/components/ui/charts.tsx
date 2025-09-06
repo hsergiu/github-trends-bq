@@ -38,8 +38,19 @@ const PIE_COLORS = [
   colors.purple[400],
 ];
 
-/** BarChart using encoding directly */
 export const BarChart: React.FC<{ rows: any[]; chartConfig?: ChartConfig }> = ({ rows, chartConfig }) => {
+  // Show every X tick and truncate long labels
+  const TICK_CHAR_LIMIT = 10;
+  const renderXAxisTick = (props: any) => {
+    const { x, y, payload } = props;
+    const value = String(payload.value);
+    const display = value.length > TICK_CHAR_LIMIT ? `${value.slice(0, TICK_CHAR_LIMIT)}…` : value;
+    return (
+      <text x={x} y={y + 10} textAnchor="middle" fill={AXIS_COLOR} fontSize={12}>
+        {display}
+      </text>
+    );
+  };
   const enc = chartConfig?.encoding || {};
   const xField = enc.x?.field || "category";
   const yField = enc.y?.[0]?.field || "count";
@@ -47,7 +58,7 @@ export const BarChart: React.FC<{ rows: any[]; chartConfig?: ChartConfig }> = ({
     <Recharts.ResponsiveContainer width="100%" height={300}>
       <Recharts.BarChart data={rows} margin={{ top: 16, right: 16, left: 16, bottom: 16 }}>
         <Recharts.CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
-        <Recharts.XAxis dataKey={xField} tick={{ fill: AXIS_COLOR }} axisLine={{ stroke: AXIS_COLOR }} tickLine={{ stroke: AXIS_COLOR }} />
+        <Recharts.XAxis dataKey={xField} interval={0} tick={renderXAxisTick} axisLine={{ stroke: AXIS_COLOR }} tickLine={{ stroke: AXIS_COLOR }} />
         <Recharts.YAxis tick={{ fill: AXIS_COLOR }} axisLine={{ stroke: AXIS_COLOR }} tickLine={{ stroke: AXIS_COLOR }} />
         <Recharts.Tooltip contentStyle={{ backgroundColor: TOOLTIP_BG, borderColor: TOOLTIP_BORDER, color: TOOLTIP_TEXT }} itemStyle={{ color: TOOLTIP_TEXT }} labelStyle={{ color: TOOLTIP_TEXT }} />
         <Recharts.Legend wrapperStyle={{ color: LEGEND_COLOR }} />
@@ -57,7 +68,6 @@ export const BarChart: React.FC<{ rows: any[]; chartConfig?: ChartConfig }> = ({
   );
 };
 
-/** LineChart using encoding directly */
 export const LineChart: React.FC<{ rows: any[]; chartConfig?: ChartConfig }> = ({ rows, chartConfig }) => {
   const enc = chartConfig?.encoding || {};
   const xField = enc.x?.field || "date";
@@ -76,7 +86,6 @@ export const LineChart: React.FC<{ rows: any[]; chartConfig?: ChartConfig }> = (
   );
 };
 
-/** PieChart using encoding directly */
 export const PieChart: React.FC<{ rows: any[]; chartConfig?: ChartConfig }> = ({ rows, chartConfig }) => {
   const enc = chartConfig?.encoding || {};
   const nameKey = enc.category?.field || "category";

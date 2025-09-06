@@ -108,8 +108,7 @@ export class LLMService {
       lines.push(`${idx + 1}) Title: ${r.title}`);
       if (r.chart_hint) lines.push(` Hint: ${r.chart_hint}`);
       lines.push(' Snippet:');
-      const snippet = (r.sql_snippet).split('\n').slice(0, 10).join('\n');
-      lines.push(` ${snippet}`);
+      lines.push(` ${r.sql_snippet}`);
     });
     lines.push('\nUse these only as inspiration. Do not copy as is. Produce a fresh query according to the user prompt and the provided schema.');
     return lines.join('\n');
@@ -186,7 +185,7 @@ export class LLMService {
     // Attempt to retrieve 'limit' vector examples
     let examplesBlock = '';
     try {
-      const examples = await this.examplesService.search(userPrompt, { limit: 3, minSim: 0.8, tags: ['githubarchive'] });
+      const examples = await this.examplesService.search(userPrompt, { limit: 1, minSim: 0.8, tags: ['githubarchive'] });
       if (examples && examples.length > 0) {
         examplesBlock = this.buildRetrievedExamplesBlock(examples.map(e => ({
           title: e.title,

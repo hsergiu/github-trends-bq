@@ -11,6 +11,12 @@ const ResultsRenderer: React.FC<Props> = ({ result }) => {
   const chartConfig = result?.data?.chartConfig;
   const rows = result?.data?.rows;
 
+  if (Array.isArray(rows) && rows.length === 0) {
+    return (
+      <div className="text-gray-400 text-center mt-4">No data found</div>
+    );
+  }
+
   // Helper function to render table
   const renderTable = (data: any[]) => (
     <div className="rounded-md border">

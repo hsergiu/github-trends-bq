@@ -253,12 +253,13 @@ export class QuestionsService {
         title: job.data.params?.title,
         questionContent: job.data.params?.userQuestion,
         result: {
-          data: job.returnvalue.result?.rows,
+          rows: job.returnvalue.result?.rows,
+          chartConfig: job.returnvalue.chartConfig,
           metadata: {
             totalRows: job.returnvalue.result?.rows.length,
             queryExecutionTime: job.returnvalue.job?.metadata?.statistics?.query?.totalBytesProcessed,
-            sqlHash: job.data.params?.sqlHash
-          }
+            sqlHash: job.data.params?.sqlHash,
+          },
         }
       };
     }
