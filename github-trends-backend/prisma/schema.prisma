@@ -13,7 +13,6 @@ model Question {
   questionContent             String   @db.Text
   title                      String   @db.VarChar()
   bigQuerySql                String   @db.Text
-  sqlHash                    String
   structuredQueryPlanSchema  Json?
   type                       String   @default("user") @db.VarChar()
   createdAt                  DateTime @default(now())

@@ -8,7 +8,7 @@ import PostgresService from "../postgres/PostgresService";
 import { LLMService } from "./LLMService";
 import { Job } from "bull";
 import { JobState } from "./SSEService";
-import { calculateSqlHash, calculatePromptHash } from "../controllers/utils";
+import { calculatePromptHash } from "../controllers/utils";
 import crypto from "crypto";
 
 const QUESTION_JOB_TYPE = "question-processing";
@@ -83,27 +83,10 @@ export class QuestionsService {
       const { sql, structuredQueryPlanSchema, title } =
         await this.llmService.generateQueryPlanWithSchemaContext(userQuestion);
 
-      const sqlHash = calculateSqlHash(sql);
-
-      // Check if SQL result already cached BEFORE updating question
-      const sqlInfo = await this.getSqlHashWithResult(sqlHash);
-      if (sqlInfo && sqlInfo.questionId && sqlInfo.result) {
-        this.logger.info(`SQL hash ${sqlHash} already cached, reusing result and question ${sqlInfo.questionId}`);
-        await this.postgresService.deleteQuestion(questionId);
-        const promptHash = calculatePromptHash(userQuestion);
-        await this.cachePromptHash(promptHash, {
-          jobId: sqlInfo.jobId,
-          questionId: sqlInfo.questionId
-        });
-        job.data.deduplicated = true;
-        return { result: sqlInfo.result, chartConfig: sqlInfo.chartConfig };
-      }
-
       await this.postgresService.updateQuestion(questionId, {
         bigQuerySql: sql,
         structuredQueryPlanSchema,
         title,
-        sqlHash
       });
 
       this.logger.info(`Starting BigQuery execution for job ${job.id}`);
@@ -111,17 +94,9 @@ export class QuestionsService {
 
       const chartConfig = await this.llmService.generateChartConfig(queryResult?.rows || []);
 
-      await this.cacheSqlHashWithResult(sqlHash, {
-        questionId,
-        result: queryResult,
-        chartConfig,
-        jobId: job.id
-      });
-
       this.logger.info(`Completed question job ${job.id} for question ${questionId}`);
       // Metadata needed by buildJobState
       job.data.params.title = title;
-      job.data.params.sqlHash = sqlHash;
 
       return { result: queryResult, chartConfig };
     } catch (error) {
@@ -160,7 +135,6 @@ export class QuestionsService {
         questionContent: params.userQuestion,
         title: 'Processing...',
         bigQuerySql: '',
-        sqlHash: '',
       });
     }
 
@@ -204,7 +178,7 @@ export class QuestionsService {
     return this.postgresService.getQuestionById(questionId);
   }
 
-  public async createQuestion(params: { id: string; questionContent: string; title: string; bigQuerySql: string; sqlHash: string; }) {
+  public async createQuestion(params: { id: string; questionContent: string; title: string; bigQuerySql: string; }) {
     return this.postgresService.createQuestion(params);
   }
 
@@ -214,14 +188,6 @@ export class QuestionsService {
 
   public async cachePromptHash(promptHash: string, data: any, expiryInSeconds?: number): Promise<void> {
     await this.redisService.cachePromptHash(promptHash, data, expiryInSeconds);
-  }
-
-  private async getSqlHashWithResult(sqlHash: string): Promise<Record<string, unknown> | null> {
-    return this.redisService.getSqlHashWithResult(sqlHash);
-  }
-
-  private async cacheSqlHashWithResult(sqlHash: string, data: Record<string, unknown>, expiryInSeconds?: number): Promise<void> {
-    await this.redisService.cacheSqlHashWithResult(sqlHash, data, expiryInSeconds);
   }
 
   /**
@@ -258,7 +224,6 @@ export class QuestionsService {
           metadata: {
             totalRows: job.returnvalue.result?.rows.length,
             queryExecutionTime: job.returnvalue.job?.metadata?.statistics?.query?.totalBytesProcessed,
-            sqlHash: job.data.params?.sqlHash,
           },
         }
       };

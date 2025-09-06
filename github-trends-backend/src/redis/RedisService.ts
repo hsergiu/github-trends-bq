@@ -12,7 +12,6 @@ const CACHE_PREFIXES = {
   QUESTION_BY_ID: 'question:id',
   QUESTION_RESULT: 'question:result',
   PROMPT_HASH: 'question:prompt',
-  SQL_HASH: 'question:sql',
   BIGQUERY_RESULT: 'bigquery:result',
   EMBEDDING: 'embedding:prompt',
 };
@@ -54,14 +53,6 @@ class RedisService {
 
   async getPromptHash(promptHash: string): Promise<any | null> {
     return this.get(CACHE_PREFIXES.PROMPT_HASH, promptHash, 'getPromptHash');
-  }
-
-  async cacheSqlHashWithResult(sqlHash: string, data: any, expiryInSeconds: number = TTL.DEFAULT): Promise<void> {
-    await this.cache(CACHE_PREFIXES.SQL_HASH, sqlHash, data, expiryInSeconds);
-  }
-
-  async getSqlHashWithResult(sqlHash: string): Promise<any | null> {
-    return this.get(CACHE_PREFIXES.SQL_HASH, sqlHash, 'getSqlHashWithResult');
   }
 
   async cacheEmbedding(prompt: string, vector: number[], expiryInSeconds: number = TTL.SHORT): Promise<void> {

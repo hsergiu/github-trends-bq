@@ -12,7 +12,6 @@ export interface CreateQuestionParams {
   questionContent: string;
   title: string;
   bigQuerySql: string;
-  sqlHash: string;
   structuredQueryPlanSchema?: any;
 }
 
@@ -225,7 +224,6 @@ export class PostgresService {
         questionContent: questionParams.questionContent,
         title: questionParams.title,
         bigQuerySql: questionParams.bigQuerySql,
-        sqlHash: questionParams.sqlHash,
         structuredQueryPlanSchema: questionParams.structuredQueryPlanSchema,
       },
     });

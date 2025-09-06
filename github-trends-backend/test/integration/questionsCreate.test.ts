@@ -3,7 +3,6 @@ import { QuestionsCreateController } from "../../src/controllers/QuestionsCreate
 import { QuestionsService } from "../../src/services/QuestionsService";
 import RedisService from "../../src/redis/RedisService";
 import PostgresService from "../../src/postgres/PostgresService";
-import { calculateSqlHash } from "../../src/controllers/utils";
 
 describe("Questions Create Integration Tests - Root", () => {
   let redisService: RedisService;
@@ -163,11 +162,6 @@ describe("Questions Create Integration Tests - Root", () => {
       
       // Both jobs process, but second one reuses cached BigQuery result
       expect(bigQueryService.executeQuery).toHaveBeenCalledWith(executedQuery1);
-
-      const sqlHash = calculateSqlHash(executedQuery1);
-      const sqlCacheInfo = await redisService.getSqlHashWithResult(sqlHash);
-      expect(sqlCacheInfo).toBeTruthy();
-      expect(sqlCacheInfo.result).toBeTruthy();
     });
   });
 
@@ -274,7 +268,6 @@ describe("Questions Create Integration Tests - Root", () => {
       expect(question!.questionContent).toBe(userPrompt);
       expect(question!.title).toBe('Test Query');
       expect(question!.bigQuerySql).toBe('SELECT * FROM `githubarchive.day.20190101`');
-      expect(question!.sqlHash).toBeTruthy();
 
       // Verify job metadata shows failure
       expect(question!.jobMetadata).toHaveLength(1);
@@ -387,8 +380,6 @@ describe("Questions Create Integration Tests - Root", () => {
         ...redisService,
         getPromptHash: jest.fn().mockRejectedValue(new Error("Redis connection timeout")),
         cachePromptHash: jest.fn().mockRejectedValue(new Error("Redis connection timeout")),
-        getSqlHashWithResult: redisService.getSqlHashWithResult.bind(redisService),
-        cacheSqlHashWithResult: redisService.cacheSqlHashWithResult.bind(redisService),
         flushAll: redisService.flushAll.bind(redisService),
         testCleanup: redisService.testCleanup.bind(redisService),
         initializeService: redisService.initializeService.bind(redisService),

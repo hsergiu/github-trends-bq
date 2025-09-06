@@ -5,15 +5,11 @@ export class SchemaContextLoader {
   private baseDir: string;
   private baseSchemaPath: string;
   private typeSchemasDir: string;
-  private queryExamplesPath: string;
-  private extraContextPath: string;
 
   constructor(schemaKey: string) {
     this.baseDir = path.join(__dirname, './schemas', schemaKey);
     this.baseSchemaPath = path.join(this.baseDir, 'schema.json');
     this.typeSchemasDir = path.join(this.baseDir, 'type');
-    this.queryExamplesPath = path.join(this.baseDir, 'examples.json');
-    this.extraContextPath = path.join(this.baseDir, 'context.txt');
   }
 
   loadBaseSchema(): any {

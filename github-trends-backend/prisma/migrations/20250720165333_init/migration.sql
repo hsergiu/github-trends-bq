@@ -4,7 +4,6 @@ CREATE TABLE "questions" (
     "userQuestion" TEXT NOT NULL,
     "title" VARCHAR NOT NULL,
     "bigQuerySql" TEXT NOT NULL,
-    "sqlHash" TEXT NOT NULL,
     "structuredQueryPlanSchema" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -35,9 +34,6 @@ CREATE TABLE "question_results" (
 
     CONSTRAINT "question_results_pkey" PRIMARY KEY ("id")
 );
-
--- CreateIndex
-CREATE UNIQUE INDEX "questions_sqlHash_key" ON "questions"("sqlHash");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "job_metadata_bullJobId_key" ON "job_metadata"("bullJobId");

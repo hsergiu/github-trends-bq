@@ -56,7 +56,7 @@ describe('GitHubArchivePlanBuilder', () => {
             table: 'githubarchive.day.20250101',
             columns: ['id', 'type', 'created_at'],
             filters: [{ column: 'created_at', op: '>', value: '2024-01-01' }],
-            limit: 100,
+            limit: 50,
           },
         },
       ],
@@ -64,12 +64,12 @@ describe('GitHubArchivePlanBuilder', () => {
         table: 'recent_events',
         columns: ['id', 'type'],
         filters: [],
-        limit: 100,
+        limit: 50,
       },
     };
     const sql = gitHubArchivePlanBuilder.buildQuery(plan);
     expect(sql).toBe(
-      "WITH recent_events AS (SELECT id, type, created_at FROM githubarchive.day.20250101 WHERE created_at > '2024-01-01' LIMIT 100)\nSELECT id, type FROM recent_events WHERE 1=1 LIMIT 100"
+      "WITH recent_events AS (SELECT id, type, created_at FROM githubarchive.day.20250101 WHERE created_at > '2024-01-01' LIMIT 50)\nSELECT id, type FROM recent_events WHERE 1=1 LIMIT 50"
     );
   });
 
@@ -132,7 +132,6 @@ describe('GitHubArchivePlanBuilder', () => {
             table: 'githubarchive.day.20250101',
             columns: ['id', 'type', 'created_at'],
             filters: [{ column: 'created_at', op: '>', value: '2024-01-01' }],
-            limit: 100,
           },
         },
         {
@@ -141,7 +140,6 @@ describe('GitHubArchivePlanBuilder', () => {
             table: 'recent_events',
             columns: ['id', 'type'],
             filters: [{ column: 'type', op: '=', value: 'PushEvent' }],
-            limit: 100,
           },
         },
       ],
@@ -154,7 +152,7 @@ describe('GitHubArchivePlanBuilder', () => {
     };
     const sql = gitHubArchivePlanBuilder.buildQuery(plan);
     expect(sql).toBe(
-      "WITH recent_events AS (SELECT id, type, created_at FROM githubarchive.day.20250101 WHERE created_at > '2024-01-01' LIMIT 100), filtered_events AS (SELECT id, type FROM recent_events WHERE type = 'PushEvent' LIMIT 100)\nSELECT id, type FROM filtered_events WHERE 1=1 LIMIT 10"
+      "WITH recent_events AS (SELECT id, type, created_at FROM githubarchive.day.20250101 WHERE created_at > '2024-01-01'), filtered_events AS (SELECT id, type FROM recent_events WHERE type = 'PushEvent')\nSELECT id, type FROM filtered_events WHERE 1=1 LIMIT 10"
     );
   });
 
@@ -167,7 +165,6 @@ describe('GitHubArchivePlanBuilder', () => {
             table: 'githubarchive.day.20250101',
             columns: ['repo.name', 'actor.login', 'created_at'],
             filters: [],
-            limit: 1000,
           },
         },
         {
@@ -176,7 +173,6 @@ describe('GitHubArchivePlanBuilder', () => {
             table: 'githubarchive.day.20250101',
             columns: ['repo.name', 'actor.login', 'created_at'],
             filters: [],
-            limit: 1000,
           },
         },
       ],
@@ -187,7 +183,7 @@ describe('GitHubArchivePlanBuilder', () => {
       },
     };
     const sql = gitHubArchivePlanBuilder.buildQuery(plan);
-    expect(sql).toBe("WITH stars_score AS (SELECT repo.name, actor.login, created_at FROM githubarchive.day.20250101 WHERE 1=1 LIMIT 1000), forks_score AS (SELECT repo.name, actor.login, created_at FROM githubarchive.day.20250101 WHERE 1=1 LIMIT 1000)\nSELECT repo_name, star_score, fork_score, total_score FROM joined WHERE 1=1");
+    expect(sql).toBe("WITH stars_score AS (SELECT repo.name, actor.login, created_at FROM githubarchive.day.20250101 WHERE 1=1), forks_score AS (SELECT repo.name, actor.login, created_at FROM githubarchive.day.20250101 WHERE 1=1)\nSELECT repo_name, star_score, fork_score, total_score FROM joined WHERE 1=1 LIMIT 20");
   });
 
   describe('Enhanced Filter Logic (OR/AND)', () => {
@@ -398,7 +394,7 @@ describe('GitHubArchivePlanBuilder', () => {
                   ]
                 }
               ],
-              limit: 1000,
+              limit: 50,
             },
           },
         ],
@@ -413,7 +409,7 @@ describe('GitHubArchivePlanBuilder', () => {
       };
       const sql = gitHubArchivePlanBuilder.buildQuery(plan);
       expect(sql).toBe(
-        "WITH filtered_events AS (SELECT id, type, actor.login FROM githubarchive.day.20250101 WHERE (type = 'PushEvent' OR type = 'WatchEvent') LIMIT 1000)\nSELECT id, type FROM filtered_events WHERE actor.login != 'bot' LIMIT 10"
+        "WITH filtered_events AS (SELECT id, type, actor.login FROM githubarchive.day.20250101 WHERE (type = 'PushEvent' OR type = 'WatchEvent') LIMIT 50)\nSELECT id, type FROM filtered_events WHERE actor.login != 'bot' LIMIT 10"
       );
     });
   });
