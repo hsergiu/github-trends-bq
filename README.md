@@ -85,7 +85,6 @@ erDiagram
     string questionContent
     string title
     string bigQuerySql
-    string sqlHash
     json structuredQueryPlanSchema
     string type
     datetime createdAt
