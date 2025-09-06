@@ -79,11 +79,56 @@ curl --request POST \
 
 ## Database schema
 ```mermaid
-graph TB
-  Question[Question] -->|has one| QuestionResult[QuestionResult]
-  Question -->|has many| JobMetadata[JobMetadata]
-  Question -->|has many| QuestionRequest[QuestionRequest]
-  QueryExample[QueryExample]
+erDiagram
+  QUESTION {
+    string id PK
+    string questionContent
+    string title
+    string bigQuerySql
+    string sqlHash
+    json structuredQueryPlanSchema
+    string type
+    datetime createdAt
+    datetime updatedAt
+  }
+  JOBMETADATA {
+    string id PK
+    string questionId FK
+    string bullJobId
+    string status
+    string failedReason
+    datetime createdAt
+    datetime updatedAt
+  }
+  QUESTIONRESULT {
+    string id PK
+    string questionId FK
+    json result
+    datetime createdAt
+    datetime updatedAt
+  }
+  QUERYEXAMPLE {
+    string id PK
+    string title
+    string prompt_text
+    string sql_snippet
+    string chart_hint
+    string[] tags
+    vector embedding
+    string embedding_model
+    datetime created_at
+    datetime updated_at
+  }
+  QUESTIONREQUEST {
+    string id PK
+    string questionId FK
+    string source
+    datetime createdAt
+  }
+
+  QUESTION ||--o| QUESTIONRESULT : has
+  QUESTION ||--o{ JOBMETADATA : includes
+  QUESTION ||--o{ QUESTIONREQUEST : logs
 ```
 
 - **Question**: primary entity with user prompt, title, sql plan to generate the query, generated bigquery SQL and metadata. One-to-one (optional) with `QuestionResult`; one-to-many with `JobMetadata` and `QuestionRequest`. Has two types: user (default) and suggested. Suggested questions are popular questions that are automatically set by a scheduled job.
